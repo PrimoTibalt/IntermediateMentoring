@@ -13,6 +13,7 @@
 x64/
 [Bb]in/
 [Oo]bj/
+.vs/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -56,6 +57,7 @@ ipch/
 *.psess
 *.vsp
 *.vspx
+
 
 # Guidance Automation Toolkit
 *.gpState
