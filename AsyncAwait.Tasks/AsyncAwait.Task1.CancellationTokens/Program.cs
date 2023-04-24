@@ -15,6 +15,7 @@ namespace AsyncAwait.Task1.CancellationTokens;
 
 internal class Program
 {
+    private static CancellationTokenSource cancellationTokenSource;
     /// <summary>
     /// The Main method should not be changed at all.
     /// </summary>
@@ -51,29 +52,15 @@ internal class Program
     private static void CalculateSum(int n)
     {
         // todo: make calculation asynchronous
-        Task<long> sum = null;
+        if (cancellationTokenSource != null)
+            cancellationTokenSource.Cancel();
 
-        while (sum is null || !sum.IsCompleted || sum.IsCanceled)
-        {
-            var source = new CancellationTokenSource();
-            sum = Task.Run(() => Calculator.Calculate(n, source.Token));
-            sum.ContinueWith((t) => Console.WriteLine($"Sum for {n} = {sum.Result}."), TaskContinuationOptions.OnlyOnRanToCompletion);
-            Console.WriteLine();
-            Console.WriteLine("Enter N: ");
-            var input = Console.ReadLine().Trim().ToUpper();
-            if (int.TryParse(input, out int value))
-            {
-                if (sum.IsCompleted)
-                {
-                    // Won't let user input to be lost
-                    CalculateSum(value);
-                    break;
-                }
-
-                source.Cancel();
-                Console.WriteLine($"Sum for {n} cancelled...");
-                n = value;
-            }
-        }
+        cancellationTokenSource = new CancellationTokenSource();
+        var token = cancellationTokenSource.Token;
+        var sum = Task.Run(() => Calculator.Calculate(n, token), token);
+        token.Register((t) => Console.WriteLine($"Sum for {n} cancelled..."), TaskContinuationOptions.OnlyOnCanceled);
+        sum.ContinueWith((t) => Console.WriteLine($"Sum for {n} = {sum.Result}."), TaskContinuationOptions.OnlyOnRanToCompletion);
+        Console.WriteLine();
+        Console.WriteLine("Enter N: ");
     }
 }
