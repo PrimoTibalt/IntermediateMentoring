@@ -57,8 +57,8 @@ internal class Program
 
         cancellationTokenSource = new CancellationTokenSource();
         var token = cancellationTokenSource.Token;
-        var sum = Task.Run(() => Calculator.Calculate(n, token), token);
-        token.Register((t) => Console.WriteLine($"Sum for {n} cancelled..."), TaskContinuationOptions.OnlyOnCanceled);
+        var sum = Task.Run(async () => await Calculator.CalculateAsync(n, token), token);
+        sum.ContinueWith((t) => Console.WriteLine($"Sum for {n} cancelled..."), TaskContinuationOptions.OnlyOnCanceled);
         sum.ContinueWith((t) => Console.WriteLine($"Sum for {n} = {sum.Result}."), TaskContinuationOptions.OnlyOnRanToCompletion);
         Console.WriteLine();
         Console.WriteLine("Enter N: ");
