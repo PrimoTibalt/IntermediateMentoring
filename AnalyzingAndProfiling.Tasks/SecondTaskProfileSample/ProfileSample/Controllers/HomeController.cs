@@ -13,36 +13,38 @@ namespace ProfileSample.Controllers
     {
         public ActionResult Index()
         {
-            var context = new ProfileSampleEntities();
-
-            var sources = context.ImgSources.Take(20).Select(x => x.Id);
-            
-            var model = new List<ImageModel>();
-
-            foreach (var id in sources)
+            // DbContect objects must be disposed (Implements IDisposable)
+            using (var context = new ProfileSampleEntities())
             {
-                var item = context.ImgSources.Find(id);
-
-                var obj = new ImageModel()
+                // No need to make from 1 request 20. Use ToList() on IQuariable to prevent multiple calls.
+                var sources = context.ImgSources.Take(20).ToList();
+                var model = new List<ImageModel>();
+                foreach (var img in sources)
                 {
-                    Name = item.Name,
-                    Data = item.Data
-                };
+                    var obj = new ImageModel()
+                    {
+                        Name = img.Name,
+                        Data = img.Data
+                    };
+                    model.Add(obj);
+                }
 
-                model.Add(obj);
-            } 
-
-            return View(model);
+                return View(model);
+            }
         }
 
         public ActionResult Convert()
         {
             var files = Directory.GetFiles(Server.MapPath("~/Content/Img"), "*.jpg");
-
             using (var context = new ProfileSampleEntities())
             {
                 foreach (var file in files)
                 {
+                    // Convert only those that aren't in repository yet.
+                    var fileName = Path.GetFileName(file);
+                    if (context.ImgSources.Select(img => img.Name).Contains(fileName))
+                        continue;
+
                     using (var stream = new FileStream(file, FileMode.Open))
                     {
                         byte[] buff = new byte[stream.Length];
@@ -51,14 +53,16 @@ namespace ProfileSample.Controllers
 
                         var entity = new ImgSource()
                         {
-                            Name = Path.GetFileName(file),
+                            Name = fileName,
                             Data = buff,
                         };
 
                         context.ImgSources.Add(entity);
-                        context.SaveChanges();
                     }
-                } 
+                }
+
+                // Save once to reduce count of database calls.
+                context.SaveChanges();
             }
 
             return RedirectToAction("Index");
@@ -68,6 +72,14 @@ namespace ProfileSample.Controllers
         {
             ViewBag.Message = "Your contact page.";
 
+            return View();
+        }
+
+        // Add controller action to resolve About link.
+        public ActionResult About()
+        {
+            ViewBag.Title = "Great views web site.";
+            ViewBag.Message = "A collection of photoes stored on my pc.";
             return View();
         }
     }
