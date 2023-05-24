@@ -33,30 +33,28 @@ namespace MyCalculatorv1
         private void result()
         {
             int num = 0;
-            int operationEnd = 0;
+            var input = tb.Text;
             if (tb.Text.Contains("+"))
             {
-                num = tb.Text.IndexOf("+");
-                operationEnd = tb.Text.LastIndexOf("+");
+                num = input.IndexOf("+");
             }
             else if (tb.Text.Contains("-"))
             {
-                num = tb.Text.IndexOf("-");
-                operationEnd = tb.Text.LastIndexOf("-");
+                num = input.IndexOf("-");
             }
             else if (tb.Text.Contains("*"))
             {
-                num = tb.Text.IndexOf("*");
-                operationEnd = tb.Text.LastIndexOf("*");
+                num = input.IndexOf("*");
             }
             else if (tb.Text.Contains("/"))
             {
-                num = tb.Text.IndexOf("/");
-                operationEnd = tb.Text.LastIndexOf("/");
+                num = input.IndexOf("/");
             }
-            string text = tb.Text.Substring(num, 1);
-            double num2 = Convert.ToDouble(tb.Text.Substring(0, num));
-            double num3 = Convert.ToDouble(tb.Text.Substring(operationEnd + 1, tb.Text.Length - num - 1));
+
+            string text = input.Substring(num, 1);
+            input = input.Remove(num + 1, input.LastIndexOf(text) - num);
+            double num2 = Convert.ToDouble(input.Substring(0, num));
+            double num3 = Convert.ToDouble(input.Substring(num + 1, input.Length - num - 1));
             switch (text)
             {
                 case "+":
