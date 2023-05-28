@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Expressions.Task3.E3SQueryProvider.QueryProvider;
+using System;
+using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,6 +9,8 @@ namespace Expressions.Task3.E3SQueryProvider
 {
     public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
+        Queue ProcessingQueue = new Queue();
+
         readonly StringBuilder _resultStringBuilder;
 
         public ExpressionToFtsRequestTranslator()
@@ -33,6 +37,10 @@ namespace Expressions.Task3.E3SQueryProvider
 
                 return node;
             }
+
+            if (E3SQueries.Methods.TryGetValue(node.Method.Name, out var method))
+                ProcessingQueue.Enqueue(method);
+
             return base.VisitMethodCall(node);
         }
 
@@ -41,18 +49,24 @@ namespace Expressions.Task3.E3SQueryProvider
             switch (node.NodeType)
             {
                 case ExpressionType.Equal:
-                    if (node.Left.NodeType != ExpressionType.MemberAccess)
-                        throw new NotSupportedException($"Left operand should be property or field: {node.NodeType}");
+                    if (node.Left.NodeType != ExpressionType.MemberAccess &&
+                        node.Right.NodeType != ExpressionType.MemberAccess)
+                        throw new NotSupportedException("Expression isn't relevant.");
 
-                    if (node.Right.NodeType != ExpressionType.Constant)
-                        throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
+                    if (node.Left.NodeType == ExpressionType.MemberAccess)
+                        Visit(node.Left);
+                    else
+                        Visit(node.Right);
 
-                    Visit(node.Left);
                     _resultStringBuilder.Append("(");
-                    Visit(node.Right);
+
+                    if (node.Right.NodeType == ExpressionType.Constant)
+                        Visit(node.Right);
+                    else
+                        Visit(node.Left);
+
                     _resultStringBuilder.Append(")");
                     break;
-
                 default:
                     throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
             };
@@ -69,8 +83,14 @@ namespace Expressions.Task3.E3SQueryProvider
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            _resultStringBuilder.Append(node.Value);
+            var result = node.Value.ToString();
+            while (ProcessingQueue.Count > 0)
+            {
+                var method = ProcessingQueue.Dequeue() as Func<string, string>;
+                result = method(result);
+            }
 
+            _resultStringBuilder.Append(result);
             return node;
         }
 
