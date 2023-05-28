@@ -10,6 +10,7 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using Expressions.Task3.E3SQueryProvider.Models.Entities;
 using Xunit;
 
@@ -25,6 +26,9 @@ namespace Expressions.Task3.E3SQueryProvider.Test
             var translator = new ExpressionToFtsRequestTranslator();
             Expression<Func<IQueryable<EmployeeEntity>, IQueryable<EmployeeEntity>>> expression
                 = query => query.Where(e => e.Workstation == "EPRUIZHW006" && e.Manager.StartsWith("John"));
+            var translatedQuery = translator.Translate(expression);
+            var generator = new FtsRequestGenerator("http://localhost:59744");
+            var uri = generator.GenerateRequestUrl<EmployeeEntity>(translatedQuery);
             /*
              * The expression above should be converted to the following FTSQueryRequest and then serialized inside FTSRequestGenerator:
              * "statements": [
@@ -35,7 +39,19 @@ namespace Expressions.Task3.E3SQueryProvider.Test
              */
 
             // todo: create asserts for this test by yourself, because they will depend on your final implementation
-            throw new NotImplementedException("Please implement this test and the appropriate functionality");
+            var decodedUri = WebUtility.UrlDecode(uri.AbsoluteUri);
+            Assert.Equal("http://localhost:59744/searchFts" +
+                "?metaType=meta:people-suite:people-api:com.epam.e3s.app.people.api.data.EmployeeEntity" +
+                "&query={" +
+                    "\"statements\":[" +
+                        "{\"query\":\"Workstation:(EPRUIZHW006)\"}," +
+                        "{\"query\":\"Manager:(John*)\"}" +
+                    "]," +
+                    "\"filters\":null," +
+                    "\"sorting\":null," +
+                    "\"start\":0," +
+                    "\"limit\":10" +
+                "}", decodedUri);
         }
 
         #endregion

@@ -9,6 +9,8 @@ namespace Expressions.Task3.E3SQueryProvider
 {
     public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
+        public const string SEPARATOR_AND = "&&";
+
         Queue ProcessingQueue = new Queue();
 
         readonly StringBuilder _resultStringBuilder;
@@ -66,6 +68,11 @@ namespace Expressions.Task3.E3SQueryProvider
                         Visit(node.Left);
 
                     _resultStringBuilder.Append(")");
+                    break;
+                case ExpressionType.AndAlso:
+                    Visit(node.Left);
+                    _resultStringBuilder.Append(SEPARATOR_AND);
+                    Visit(node.Right);
                     break;
                 default:
                     throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
