@@ -218,7 +218,7 @@ namespace GameOfLife
 
             if (isNotNearRightBorder && cells[i + 1, j].IsAlive) count++;
             if (isNotNearRightBorder && isNotNearCeiling && cells[i + 1, j + 1].IsAlive) count++;
-            if (isNotNearRightBorder && cells[i, j + 1].IsAlive) count++;
+            if (isNotNearCeiling && cells[i, j + 1].IsAlive) count++;
             if (i != 0 && isNotNearCeiling && cells[i - 1, j + 1].IsAlive) count++;
             if (i != 0 && cells[i - 1, j].IsAlive) count++;
             if (i != 0 && j != 0 && cells[i - 1, j - 1].IsAlive) count++;
