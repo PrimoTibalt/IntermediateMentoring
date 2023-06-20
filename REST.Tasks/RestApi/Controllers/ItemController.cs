@@ -1,43 +1,61 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using RestApi.Models;
+using RestApi.Services;
 
 namespace RestApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("v1/item")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
     [ApiController]
     public class ItemController : ControllerBase
     {
-        // GET: api/<ItemController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly ItemService _itemService;
+
+        public ItemController()
         {
-            return new string[] { "value1", "value2" };
+            _itemService = new ItemService();
         }
 
-        // GET api/<ItemController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet(Name = nameof(GetItemList))]
+        [ResponseCache(CacheProfileName = "Default")]
+        public IActionResult GetItemList([FromQuery] int pageNum, int pageSize, int categoryId)
         {
-            return "value";
+            var items = _itemService.GetItems(pageNum, pageSize, categoryId);
+            if (items.Any())
+                return Ok(items);
+
+            return NoContent();
         }
 
-        // POST api/<ItemController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpGet("{itemId}", Name = nameof(GetItemById))]
+        [ResponseCache(CacheProfileName = "Default")]
+        public IActionResult GetItemById([FromRoute] int itemId)
         {
+            var item = _itemService.Get(itemId);
+            if (item is null)
+                return NotFound();
+
+            return Ok(item);
         }
 
-        // PUT api/<ItemController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPost(Name = nameof(CreateItem))]
+        public IActionResult CreateItem([FromBody] Item itemToCreate)
+            => CreatedAtAction(nameof(GetItemById), new { itemId = _itemService.Add(itemToCreate) }, itemToCreate);
+
+        [HttpPut("{itemId}", Name = nameof(UpdateItem))]
+        public IActionResult UpdateItem([FromRoute] int itemId, [FromBody] Item itemToUpdate)
         {
+            itemToUpdate.Id = itemId;
+            _itemService.Update(itemToUpdate);
+            return NoContent();
         }
 
-        // DELETE api/<ItemController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete("{itemId}", Name = nameof(DeleteItem))]
+        public IActionResult DeleteItem([FromRoute] int itemId)
         {
+            _itemService.Remove(itemId);
+            return NoContent();
         }
     }
 }

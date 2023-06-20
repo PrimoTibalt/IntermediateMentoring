@@ -1,43 +1,55 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using RestApi.Models;
+using RestApi.Services;
 
 namespace RestApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("v1/category")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        // GET: api/<CategoryController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly CategoryService _categoryService;
+
+        public CategoryController()
         {
-            return new string[] { "value1", "value2" };
+            _categoryService = new CategoryService();
         }
 
-        // GET api/<CategoryController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet(Name = nameof(GetCategoryList))]
+        [ResponseCache(CacheProfileName = "Default")]
+        public IActionResult GetCategoryList()
+            => Ok(_categoryService.GetCategories());
+
+        [HttpGet("{categoryId}", Name = nameof(GetCategoryById))]
+        [ResponseCache(CacheProfileName = "Default")]
+        public IActionResult GetCategoryById([FromRoute] int categoryId)
         {
-            return "value";
+            var category = _categoryService.Get(categoryId);
+            if (category is null)
+                return NotFound();
+
+            return Ok(category);
         }
 
-        // POST api/<CategoryController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpPost(Name = nameof(CreateCategory))]
+        public IActionResult CreateCategory([FromBody] Category categoryToCreate)
+            => CreatedAtAction(nameof(GetCategoryById), new { categoryId = _categoryService.Add(categoryToCreate) }, categoryToCreate);
+
+        [HttpPut("{categoryId}", Name = nameof(UpdateCategory))]
+        public IActionResult UpdateCategory([FromRoute] int categoryId, [FromBody] Category categoryToUpdate)
         {
+            categoryToUpdate.Id = categoryId;
+            _categoryService.Update(categoryToUpdate);
+            return NoContent();
         }
 
-        // PUT api/<CategoryController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpDelete("{categoryId}", Name = nameof(DeleteCategory))]
+        public IActionResult DeleteCategory([FromRoute] int categoryId)
         {
-        }
-
-        // DELETE api/<CategoryController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            _categoryService?.Delete(categoryId);
+            return NoContent();
         }
     }
 }
