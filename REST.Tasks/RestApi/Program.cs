@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseIIS();
 
 builder.Services.AddControllers((options) =>
 {
@@ -10,6 +13,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddResponseCaching();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseHttpsRedirection();
 
